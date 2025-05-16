@@ -1,0 +1,775 @@
+---
+title: "Examining Life Amidst the COVID Era"
+author:
+- "Grace Esther"
+output:
+  pdf_document:
+    latex_engine: pdflatex
+  always_allow_html: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, echo=TRUE)
+```
+
+```{r message=FALSE, warning=FALSE}
+source("explorationFunction.R")
+library(ggplot2) # data viz
+library(dplyr) # data manipulation
+library(corrplot) # visualizing correlation matrices
+library(ltm) # Item Reponse Theory -> biserial.cor
+library(vcd) # Categorical Data Visualization -> assocstats
+library(DescTools) # miscellaneous functions for descriptive statistics -> PercTable
+library(ggridges) # ridge plots -> geom_density_ridges
+#library(plotly) # for plotly interactive visualization
+library(tidyr) # for pivot_longer
+```
+
+## 1.	Introduction
+
+COVID-19 has affected the whole world, causing big lockdowns and major disruptions in many areas. People had to stay home and avoid social contact to slow the spread of the virus, which changed how we live and interact. Students, especially in the Delhi-National Capital Region (NCR), have been particularly affected. Schools had to switch quickly to online learning, creating serious challenges for traditional education and highlighting the need to understand how this change impacts students' lives.
+
+This study looks at how the COVID-19 pandemic has affected students in the Delhi-NCR, focusing on their mental health, social interactions, and education. The shift to online learning has been tough for regular educational systems, making it important to understand its effects on students. This information is key to creating better educational strategies and mental health services. The research also aligns with Sustainable Development Goal 3 (SDG 3), which aims to ensure healthy lives and promote well-being for all ages.
+
+The report is for researchers, educators, policymakers, and others interested in how COVID-19 has affected students' psychology and education. The main goals are to evaluate how well online learning worked during the pandemic, examine the link between students' daily activities and their health, identify ways students cope with stress and anxiety, and offer suggestions for improving education and mental health services.
+
+The study uses data on students' daily activities, health issues, and online class experiences, applying data analysis methods and statistical tools. There are limitations, such as potential biases in self-reported data and the focus on a specific region. The study assumes that the data accurately represents the experiences of students in the Delhi-NCR.
+
+Despite these limitations, this study is important for understanding the wider impacts of the COVID-19 pandemic on students' lives. It provides valuable insights that could shape future education strategies and mental health services. The report offers a detailed look at current issues and potential solutions, making it a useful resource for anyone concerned about students' well-being during and after the pandemic.
+
+***
+
+## 2.	Data Description
+
+The data for this research was collected from an online survey given to students between July 13 and July 17, 2020, using Google online platforms. The aim was to gather information on how the COVID-19 pandemic affected students' daily lives, health, online class experiences, and other areas. This dataset is referenced in the research article "COVID-19 and its Impact on Education, Social Life, and Mental Health of Students: A Survey" by Chaturvedi, Vishwakarma, and Singh (2020), and is available to the public on Kaggle.
+
+The dataset contains 19 variables and 1,182 responses, each reflecting different aspects of students' experiences during the pandemic. Below is a brief overview of each variable:
+
++	ID: Unique identifier assigned to every respondent.
++	Region.of.residence: The region in which the respondent resides (either inside Delhi-NCR or outside of it).
++	Age.of.Subject: Age of the respondent in years.
++	Time.spent.on.Online.Class: The amount of time (in hours) spent each day on online courses.
++	Rating.of.Online.Class.experience: The rating (Very poor, Poor, Average, Good, Excellent) provided by the respondent for their online class experience.
++	Medium.for.online.class: The device (such as a laptop, desktop computer, tablet, smartphone, etc.) used to attend online classes.
++	Time.spent.on.self.study: The amount of time (in hours) dedicated to self-study each day.
++	Time.spent.on.fitness: The number of hours a day dedicated to physical fitness activities.
++	Time.spent.on.sleep: Total amount of time (in hours) spent each day sleeping.
++	Time.spent.on.social.media: The amount of time (in hours) spent every day on social media.
++	Prefered.social.media.platform: The platform of choice for social media (such as Instagram, Youtube, Linkedin, etc.).
++	Time.spent.on.TV: The amount of time (in hours) per day spent watching TV.
++	Number.of.meals.per.day: Number of meals consumed per day.
++	Change.in.your.weight: Variation in weight (increased, decreased, or remained constant) during the lockdown.
++	Health.issue.during.lockdown: Whether the respondent had any health issues during the lockdown (Yes/No).
++	Stress.busters: Things respondents do to relieve stress (e.g., cook, browse social media, listen to music, etc.).
++	Time.utilized: Whether the respondent felt they used their time effectively during the lockdown (Yes/No).
++	Do.you.find.yourself.more.connected.with.your.family..close.friends...relatives: Whether the respondent felt more connected with family, close friends, and relatives during the lockdown (Yes/No).
++	What.you.miss.the.most: The aspect of life respondents missed the most during the lockdown (e.g., school/college, roaming around freely, travelling, etc).
+
+***
+
+
+```{r}
+# import data from directory in data frame format
+df.raw <- read.csv("C:\\BINUS\\Semester 2\\DMV\\Asg4_2702305576\\test.csv")
+head(df.raw, n=10)
+```
+
+```{r}
+# showing the structure of our dataframe
+str(df.raw)
+```
+* df.raw is a data frame with 1182 observations/ rows with 19 features/ variables
+* it tells which variables has what type of variables (chr: character/ string, int: whole number, num: numeric)
+* it also includes some values for each variable
+
+## 3.	Data Preprocessing
+Preprocessing was carried out in several steps to ensure the data was ready for analysis and consistent. The steps included:
+
+1. Renaming the Columns:
+The column names were changed using the dplyr package to improve readability and understanding.
+
+```{r}
+# using dplyr library to rename the columns name's
+# the left side is the new column name and the right side is the old column name
+df.raw = df.raw %>% rename(
+  Region = Region.of.residence,
+  Age = Age.of.Subject,
+  OnlineClass_Time = Time.spent.on.Online.Class,
+  OnlineClass_Rating = Rating.of.Online.Class.experience,
+  OnlineClass_Medium = Medium.for.online.class,
+  SelfStudy_Duration = Time.spent.on.self.study,
+  Fitness_Duration = Time.spent.on.fitness,
+  Sleeping_Duration = Time.spent.on.sleep,
+  SosMed_Duration = Time.spent.on.social.media,
+  SosMed_Medium = Prefered.social.media.platform,
+  WatchingTV_Duration = Time.spent.on.TV,
+  NumberOfMeals = Number.of.meals.per.day,
+  WeightChange = Change.in.your.weight,
+  Having_HealthIssue = Health.issue.during.lockdown,
+  Stress_Busters = Stress.busters,
+  Time_Utilized = Time.utilized,
+  Connected_with_Family_Friends_Relatives = Do.you.find.yourself.more.connected.with.your.family..close.friends...relatives...,
+  Most_Missed_Things = What.you.miss.the.most
+)
+
+```
+
+2. Data Subsetting:
+The "ID" column was removed from the dataset as it was deemed irrelevant for the analysis, resulting in the creation of a new data frame without it.
+
+```{r}
+# create a new data frame from subsetting our old data frame and remove the ID column because we think that ID column isn't useful
+df <- subset(df.raw, select = -c(ID))
+
+# checking our new data frame structure's
+str(df)
+```
+
+3. Handling Inconsistencies:
++ Missing values in the columns "SosMed_Medium" and "WatchingTV_Duration" were set to "NA."
++ Inconsistent values were corrected, such as changing "Whatsapp" to "WhatsApp" and setting missing TV watching durations to 0.
++ Similar responses in "Most_Missed_Things" were grouped and standardized to ensure consistency.
+
+```{r}
+# function to print the unique value and the total of unique value count in specific column (the column name will be passed as parameter)
+CekUnique <- function(i)
+{
+  # cat is a function which stands for concatenate and print
+    cat(i,": [",length(unique(df[[i]])),"]\n") # the total of unique value count
+    cat(unique(df[[i]]), sep = "; ") # unique value
+    cat("\n\n")
+}
+
+# check unique for some specific columns in our data frame
+CekUnique("SosMed_Medium")
+CekUnique("WatchingTV_Duration") 
+CekUnique("Most_Missed_Things") 
+```
+
+This is useful for data preprocessing so that we can identify inconsistencies or missing information.
+
+The value "none" was replaced with "NA" to handle missing data consistently.
+
+```{r}
+df$SosMed_Medium[df$SosMed_Medium %in% c("None", "None ")] <- NA
+df$SosMed_Medium[df$SosMed_Medium == "Whatsapp"] <- "WhatsApp"
+df$WatchingTV_Duration[df$WatchingTV_Duration %in% c("N", "n", " ", "")] <- NA
+df$WatchingTV_Duration[df$WatchingTV_Duration=="No tv"] <- 0
+df$Most_Missed_Things[df$Most_Missed_Things %in% c("All ", "all", "All of the above ", "All the above", "ALL", "everything", "all of the above", "All above", "All of them")] <- "All"
+df$Most_Missed_Things[df$Most_Missed_Things %in% c("NOTHING", "I have missed nothing ", "nothing", "Nothing this is my usual life", "Nothing ", ".")] <- "Nothing"
+```
+
+
+4. Correcting Data Types:
++ The data type of "WatchingTV_Duration" was changed from character to numeric.
++ To maintain consistency in analysis, categorical variables were transformed into factors with predetermined levels. For example, "OnlineClass_Rating" included levels such as "Very poor," "Poor," "Average," "Good," and "Excellent."
++ Additional categorical variables converted into factors included "OnlineClass_Medium," "SosMed_Medium," "WeightChange," "Having_HealthIssue," "Stress_Busters," "Time_Utilized," "Connected_with_Family_Friends_Relatives," and "Most_Missed_Things."
+
+
+```{r}
+# Change the datatype from char to numeric
+df$WatchingTV_Duration = as.numeric(df$WatchingTV_Duration)
+
+df$Region <- factor(df$Region, levels = unique(df$Region))
+CekUnique("OnlineClass_Rating")
+df$OnlineClass_Rating <- factor(df$OnlineClass_Rating, levels = c("Very poor","Poor","Average","Good","Excellent"))
+df$OnlineClass_Medium <- factor(df$OnlineClass_Medium, levels = unique(df$OnlineClass_Medium))
+df$SosMed_Medium <- factor(df$SosMed_Medium, levels = unique(df$SosMed_Medium))
+CekUnique("WeightChange")
+df$WeightChange <- factor (df$WeightChange, levels = c("Decreased","Remain Constant","Increased"))
+df$Having_HealthIssue <- factor(df$Having_HealthIssue)
+df$Stress_Busters <- factor(df$Stress_Busters, levels = unique(df$Stress_Busters))
+df$Time_Utilized <- factor(df$Time_Utilized)
+df$Connected_with_Family_Friends_Relatives <- factor(df$Connected_with_Family_Friends_Relatives)
+df$Most_Missed_Things <- factor(df$Most_Missed_Things, levels = unique(df$Most_Missed_Things))
+```
+
+```{r}
+# choose the name of columns which datatype is numeric/ integer or categorical/ char
+num_cols = c()
+cat_cols = c()
+for (i in names(df))
+{
+  if (is.numeric(df[[i]]) || is.integer(df[[i]]))
+  {
+    num_cols <- c(num_cols,i)
+  }
+  else
+  {
+    cat_cols <- c(cat_cols,i)
+  }
+}
+
+cat("Numeric: ",paste(num_cols,collapse=", "),"\n\n")
+cat("Categorical: ",paste(cat_cols,collapse=", "),"\n")
+```
+
+5.	Dealing with Missing Data:
++	The mean of the column was used to fill in the missing data for numerical columns which had missing values.
++	The mode, or most frequent value, of a categorical column, was used to fill in the missing value.
+
+```{r}
+# Count how many NA value in each column
+for (i in names(df))
+{
+  cat(i,": ",sum(is.na(df[[i]])),"\n")
+}
+
+# Fill all the NA value in non numeric variable with mode and using mean to fill all the NA value in numeric variable
+for (i in cat_cols)
+{
+  # names is used to extract the name and not the frequency value
+  mode <- names(sort(table(df[[i]]), decreasing=TRUE)[1])
+  df[[i]][is.na(df[[i]])] <- mode
+}
+
+for (i in num_cols)
+{
+  mean <- mean(df[[i]], na.rm = TRUE)
+  df[[i]][is.na(df[[i]])] <- mean
+}
+```
+
+Verify the structure of our dataframe after completing the data preprocessing steps.
+
+```{r}
+str(df)
+```
+
+***
+
+## 4.	Data Exploration
+
+```{r}
+summary(df)
+```
+
+#### Categorical Variables:
+The summary shows how often each category was chosen for variables like Region, OnlineClass_Rating, OnlineClass_Medium, and others.
+
+  + Region: The dataset includes 461 participants from places outside Delhi-NCR and 721 participants from Delhi-NCR.
+  + OnlineClass_Rating: Ratings for online classes varied among participants, with responses ranging from very poor (437), poor (30), average (387), good (230), to excellent (98), reflecting diverse opinions on online learning experiences.
+  + OnlineClass_Medium: Participants used different devices for online classes, such as laptop/desktop (596), smartphone (539), tablet (37), any gadget (5), and both smartphone and laptop/desktop (5), indicating preferences for flexible learning methods.
+  + SosMed_Medium: Various social media platforms were used by participants, including Instagram (370), WhatsApp (337), YouTube (314), LinkedIn (61), Facebook (52), Twitter (28), and other platforms (20), highlighting diverse social media usage.
+  + WeightChange: Participants reported weight changes during the pandemic, with decreases (209), no change (535), and increases (438), showing varying impacts on physical health.
+  + Having_HealthIssue: Participants reported health issues, with responses split into no (1021) and yes (161), underscoring the prevalence of health problems during the pandemic.
+  + Stress_Busters: Coping strategies included listening to music (276), playing online video games (175), watching web series (102), reading books (77), browsing social media (74), sleeping (71), and other methods (407), indicating diverse ways of managing stress.
+  + Time_Utilized: Participants reported whether they utilized their time effectively during the pandemic, with responses categorized as no (608) and yes (574), showing different levels of productivity.
+  + Connected_with_Family_Friends_Relatives: Participants felt connected with family, friends, or relatives, with responses categorized as no (351) and yes (831), emphasizing the importance of social connections during periods of isolation.
+  + Most_Missed_Things: Activities missed the most during the pandemic included school/college (379), time with friends/relatives (223), traveling (183), freely roaming (149), dining out (104), colleagues (67), and other activities (77), highlighting the impact of restrictions on daily activities and social interactions.
+
+#### Numeric Variables:
+The summary gives us information about variables such as Age, OnlineClass_Time, SelfStudy_Duration, and more.
+
+  + Age: The participants' ages ranged from 7 to 59 years, with most around 20 years old.
+  + OnlineClass_Time: During the pandemic, participants spent between 0 to 10 hours daily on online classes, with an average of 3.21 hours.
+  + SelfStudy_Duration: Study habits varied widely, with participants spending from 0 to 18 hours daily on self-study, averaging 2.91 hours.
+  + Fitness_Duration: Daily physical activity varied, with participants engaging from 0 to 5 hours, averaging 0.77 hours.
+  + Sleeping_Duration: Participants slept an average of 7.87 hours daily, with most sleeping around 8 hours.
+  + SosMed_Duration: Daily social media use ranged from 0 to 10 hours, with an average of 2.37 hours.
+  + WatchingTV_Duration: Daily TV viewing ranged from 0 to 15 hours, averaging 1.02 hours.
+  + NumberOfMeals: Participants typically ate 2.92 meals daily, with most having around 3 meals.
+
+These summaries provide insights into how participants spent their time and managed daily activities during the pandemic.
+
+
+*Note: (Other) combine all remaining levels of a factor variable with more than six levels into a single “other” category Numeric variables provide mean value and Tukey’s five-number summary which includes the minimum, first quartile (Q1), median (Q2), third quartile (Q3), and maximum*
+
+```{r}
+BasicSummary(df)
+```
+
++ The majority of the variables in this dataset have clear and meaningful names, which is crucial for understanding the data easily
++ Among the 18 variables in the df dataset, 10 are categorical factors, and the rest of the columns contain numeric data
+  -   variable: name or label of the variable
+  -   type: data type of the variable (ex: character, numeric)
+  -   levels: number of unique categories/ values
+  -   topLevel: most frequent category/value
+  -   topCount: frequency of the top-level category/value
+  -   topFrac: proportion of the top-level category/value
+  -   missFreq: count of missing values
+  -   missFrac: proportion of missing values
+
+```{r}
+num_df <- subset(df,select = num_cols) # make new data frame with consisting only numeric/ integer data type
+convert_matrix(num_df)
+```
+
+These statistical measures offer insights into how data is distributed within a dataset:
+
+-   Central Tendency: *mean* and *median* help to understand the central value of the data.
+-   Variability: *variance* and *standard deviation* measure the spread of the data points around the mean
+-   Range: quick insight into the spread between the minimum and maximum values
+-   Distribution and Spread: *interquartile range (IQR)* provides insights about the spread of the middle 50% of the data, giving a solid measure of the data's distribution that is less influenced by extreme values or outliers
+
+```{r}
+# Age of Respondent visualization (group to some categories with intervals of 10)
+age_plot <- ggplot(df, aes(x = Age, fill=Having_HealthIssue)) + # x axis represents age, and the color will be differentiate by having health issue
+  geom_histogram(color = "black", binwidth = 10) + # our histogram will have black outline and the bars are group per 10 intervaols
+  # add label to our graph
+  labs(title = "Distribution of Respondents by Age",
+       x = "Age",
+       y = "Number of Respondents",
+       fill = "Having Health Issue?") +
+  scale_fill_brewer(palette = "Set2") + # filling colors using color palettes from the RColorBrewer package
+  coord_flip() # swapping the x and y axis, it is useful when the data categorical name is too long and it doesn't fit in the x axis
+print(age_plot)
+#ggplotly(age_plot)
+```
+
+The survey responses indicate that most people who answered are teenagers or in their twenties. This tells us important things about the different issues people of different ages might have. Younger students might find it hard to stay focused and disciplined when they're learning online. Older students might worry about what will happen with their careers in the future.
+
+```{r}
+# Respondent's Region of Residence visualization
+residence_plot <- pie(table(df$Region), # table is used to create a contingency table of the counts of each category
+    main = "Distribution of Respondents by Region of Residence",
+    col = c("purple", "pink"))
+```
+
+The analysis shows that a large majority, more than half of the respondents, live in the Delhi-National Capital Region (Delhi-NCR).
+
+```{r}
+time_plot <- pie(table(df$Time_Utilized),
+    main = "Distribution of Respondents by Time Management",
+    col = c("purple", "pink"))
+```
+
+The study reveals that time management has been a significant challenge for students during the pandemic. According to the research, 51.44% of students felt they were not effectively using their time. This finding illustrates the struggle students face in adapting to new routines and managing their time well in an online learning setup.
+
+```{r}
+health_plot <- pie(table(df$Having_HealthIssue),
+    main = "Distribution of Respondents by Having Health Issue",
+    col = c("purple", "pink"))
+```
+
+Based on the survey, about 13.62% of students mentioned having health issues, showing a notable impact on their physical and mental well-being. This finding mirrors a broader worldwide pattern of increased health concerns due to extended lockdowns and lifestyle adjustments.
+
+```{r}
+# Respondent's Preferred Social Media Platform visualization
+sosmed_plot <- df %>% # %>% is a pipe operator to chain multiple operation
+  group_by(SosMed_Medium) %>% # group data by SosMed_Medium
+  summarise(freqCount = n()) %>% # returns one row for each combination of grouping variables; n() -> counts the number of frequency count in each group
+  ggplot(aes(x=reorder(SosMed_Medium, freqCount),  y=freqCount, fill=freqCount)) + # reorder the sosmed_medium factor based on freqCount in ascending order, eventhough it looks like descending because coord_flip is used here
+  geom_bar(color="black", stat="identity") + # stat = "identity" -> height of the bars is determined by freqCount
+  labs(title = "Distribution of Respondents by Preferred Social Media Platform",
+       x = "Social Media Platforms",
+       y = "Number of Respondents",
+       fill = "Frequency Count") +
+  scale_fill_gradient(low = "lightblue", high = "darkblue") + # filling colors using gradient with starting color light blue and end with red
+  coord_flip()
+print(sosmed_plot)
+#ggplotly(sosmed_plot)
+```
+
+The report also examines which social media platforms students preferred most, offering insights into their online habits and how social media helped them stay connected during the pandemic. Instagram and WhatsApp emerged as the top choices, highlighting their significant role in students' social interactions.
+
+```{r}
+# Top 20 Respondent's Preferred Stress Busters
+stress_plot <- df %>%
+  group_by(Stress_Busters) %>% 
+  summarise(freqCount = n()) %>%
+  top_n(10, freqCount) %>%  # filter the top 10 stress busters
+  ggplot(aes(x=reorder(Stress_Busters, freqCount),  y=freqCount, fill=freqCount)) +
+  geom_bar(color="black", stat="identity") +
+  labs(title = "Distribution of Respondents by Preferred Stress Busters (Top 10)",
+       x = "Activity",
+       y = "Number of Respondents",
+       fill = "Frequency Count") +
+  scale_fill_gradient(low = "lightblue", high = "darkblue") +
+  coord_flip()
+print(stress_plot)
+#ggplotly(stress_plot)
+```
+
+Managing stress is another important concern. Throughout the pandemic, students found solace in activities like listening to music and playing online video games, which ranked among their top five ways to cope with stress. These activities played a crucial role in helping students navigate these challenging times by providing relaxation and stress relief.
+
+```{r}
+# Top 10 Things the Respondent Miss the Most
+miss_plot <- df %>%
+  group_by(Most_Missed_Things) %>% 
+  summarise(freqCount = n()) %>%
+  top_n(10, freqCount) %>%
+  ggplot(aes(x=reorder(Most_Missed_Things, freqCount),  y=freqCount, fill=freqCount)) +
+  geom_bar(color="black", stat="identity") +
+  labs(title = "Distribution of Respondents by Things they Miss the Most (Top 10)",
+       x = "Object/ Subject",
+       y = "Number of Respondents",
+       fill = "Frequency Count") +
+  scale_fill_gradient(low = "lightblue", high = "darkblue") +
+  coord_flip()
+print(miss_plot)
+#ggplotly(miss_plot)
+```
+
+Students expressed longing for aspects of their lives before the pandemic, such as attending school and college and spending time with friends and family. These factors highlight the routines and connections students valued most and illustrate how the pandemic disrupted their social and academic environments. The lack of face-to-face interactions and structured schedules had a significant impact on their daily lives.
+
+```{r}
+# store the column name of variables related to duration
+duration_cols <- c('OnlineClass_Time', 'SelfStudy_Duration', 'Fitness_Duration',
+                   'Sleeping_Duration', 'SosMed_Duration', 'WatchingTV_Duration')
+
+# calculate mean duration for each activity
+mean_durations <- sapply(duration_cols, function(col) mean(df[[col]], na.rm = TRUE)) # a function which take the parameter col to calculate each mean
+names(mean_durations) <- duration_cols # labeling the vector
+
+# create a long-format data frame
+df_long <- stack(df[, duration_cols]) # stack the duration_cols -> resulting a data frame with 2 columns (the value and the names of stacked columns)
+names(df_long) <- c("Duration", "Activity")
+
+# reorder activities by mean of duration
+ordered_activities <- names(sort(mean_durations))
+df_long$Activity <- factor(df_long$Activity, levels = ordered_activities)
+
+# write.table(df_long, file="df_long.csv", col.names = TRUE, row.names = FALSE, sep=",")
+
+# create the box plot
+duration_plot <- ggplot(df_long, aes(y = Activity, x = Duration)) +
+  geom_boxplot(fill="gray") +
+  labs(title = "Distribution of Time Spent by Activity",
+       x = "Duration (Hours(s))",
+       y = "Type of Activity")
+
+print(duration_plot)
+```
+
+Looking into how students used their time uncovered some concerning patterns. Exercise was the least prioritized activity, suggesting a lack of physical activity. This lack can lead to lasting negative effects on both physical and mental well-being. It's crucial to encourage children to incorporate more physical activity into their daily schedules.
+
+```{r}
+# remove outliers in duration column based on the outlier we found in the boxplot
+for (i in duration_cols)
+{
+  outliers <- boxplot.stats(df[[i]])$out # identify outliers
+  df <- df[!df[[i]] %in% outliers, ] # remove the whole row if it contains outliers
+}
+
+str(df)
+```
+
+Now our data is reduced to 1048 observations
+
+```{r}
+# reshape the data into a long format
+df_long <- df %>%
+  pivot_longer(
+    cols = c(OnlineClass_Time, SelfStudy_Duration, Fitness_Duration, Sleeping_Duration, SosMed_Duration, WatchingTV_Duration),
+    names_to = "Activity",
+    values_to = "Duration"
+  )
+
+p_combined <- ggplot(df_long, aes(x = Having_HealthIssue, y = Duration, fill = Having_HealthIssue)) +
+  geom_boxplot(color="black") +
+  coord_flip() +
+  labs(title="Time spent on Various Activities by Health issue during lockdown", 
+       x="Health issue during lockdown", 
+       y="Time spent") +
+  facet_wrap(~ Activity) +
+  scale_fill_manual(values = c("YES" = "pink", "NO" = "purple")) +
+  theme(legend.position = "none")
+
+print(p_combined)
+```
+
+The study did not establish a straightforward connection between activity levels and health issues, suggesting that multiple factors influence students' health, such as mental well-being, diet, and pre-existing medical conditions. To comprehensively grasp these complex dynamics, a thorough approach is necessary.
+
+```{r}
+meal_health_plot <- ggplot(df, aes(x = Having_HealthIssue, y = NumberOfMeals)) +
+  geom_violin(color="black", fill="gray") +
+  coord_flip() +
+  labs(title="Number of Meals a Day by Health issue during lockdown", 
+       x="Health issue during lockdown", 
+       y="Number of Meals a Day") +
+  scale_fill_brewer(palette="Set1") + # set color palette to fill the graph
+  theme(legend.position = "none")
+print(meal_health_plot)
+```
+
+* Majority of the respondents eat 3 times per day, followed by 2 times and 4 times per day
+* Respondents with no health issue tend to eat more, than the one who's health issue
+
+```{r}
+weight_change_plot <- ggplot(df, aes(x=NumberOfMeals, y=WeightChange, fill=WeightChange)) +
+  geom_density_ridges() +
+  labs(title = "Change in Weight vs. Number of Meals per Day",
+       x = "Number of Meals per Day",
+       y = "Change in Weight",
+       fill = "Change in Weight") +
+  theme(axis.text.y = element_blank()) # hide the y-axis because it isn't used in this graph
+
+print(weight_change_plot)
+```
+
+* Respondents who eat less than 3 times a day tend to lose weight Respondents who eat more than 3 times a day tend to gain weight
+* Most respondents who eat 3 times a day maintain a stable weight.
+
+Next, we'll look for anomalies
+
+```{r}
+FindOutliers(df$NumberOfMeals)$summary
+```
+
+The first column lists the name of the outlier detection method used. The second column shows the total number of observations, and the third column indicates how many observations are missing (recorded as NA). The fourth column displays the number of outliers detected by each method. The next two columns present the lower and upper limits used to identify outliers. The final two columns show the lower and upper boundaries of the data values that are not considered outliers.
+
+For example, the three-sigma rule identified only 3 outliers, while the Hampel method found 505 outliers, and the boxplot rule identified 45 outliers.
+
+```{r}
+FindOutliers(df$OnlineClass_Time)$summary
+```
+
+It's evident that the three-sigma rule detected no outliers, whereas the Hampel method identified 31 outliers, and the boxplot rule flagged 107 outliers.
+
+```{r}
+FindOutliers(df$SelfStudy_Duration)$summary
+```
+
+It's clear that according to the analysis:
+* The three-sigma rule found 0 outliers
+* The Hampel method identified 13 outliers
+* The boxplot rule detected 72 outliers
+
+```{r}
+FindOutliers(df$Fitness_Duration)$summary
+```
+
+It's apparent that all the rules identified 0 outliers.
+
+```{r}
+FindOutliers(df$Sleeping_Duration)$summary
+```
+
+We can observe that both the three-sigma and Hampel rules identified 0 outliers, while the boxplot rule flagged 41 outliers.
+
+```{r}
+FindOutliers(df$SosMed_Duration)$summary
+```
+
+It's apparent that all the rules identified 0 outliers.
+
+```{r}
+FindOutliers(df$WatchingTV_Duration)$summary
+```
+
+According to the three-sigma rule, there are 11 outliers detected, while neither the Hampel nor the boxplot rules found any outliers.
+
+Now, we'll proceed to remove the outliers identified by the three-sigma rule.
+
+```{r}
+# function to remove outliers using three-sigma rule: data outside the range of mean +-3 × standard deviation are considered outliers
+remove_outliers_3sigma <- function(df, col_name) {
+  mean_val <- mean(df[[col_name]], na.rm = TRUE) # calculate mean with NA value removed
+  sd_val <- sd(df[[col_name]], na.rm = TRUE) # calculate std with NA value removed
+  
+  lower_limit <- mean_val - 3 * sd_val
+  upper_limit <- mean_val + 3 * sd_val
+  
+  # keep the rows where the values in the specified column (col_name) are within the lower and upper limit
+  df_filtered <- df[df[[col_name]] >= lower_limit & df[[col_name]] <= upper_limit, ] #buat ngasi syarat hrs ada koma [,]
+  
+  return(df_filtered)
+}
+
+# remove outliers using our function
+df <- remove_outliers_3sigma(df, "NumberOfMeals")
+df <- remove_outliers_3sigma(df, "NumberOfMeals")
+df <- remove_outliers_3sigma(df, "OnlineClass_Time")
+df <- remove_outliers_3sigma(df, "SelfStudy_Duration")
+df <- remove_outliers_3sigma(df, "Fitness_Duration")
+df <- remove_outliers_3sigma(df, "Sleeping_Duration")
+df <- remove_outliers_3sigma(df, "SosMed_Duration")
+df <- remove_outliers_3sigma(df, "WatchingTV_Duration")
+```
+
+## 5.	Statistical Analysis
+
+#### Numerical Variables
+
+1. Shapiro-Wilk Test for Normality
+
+Before conducting the Pearson correlation, we performed the Shapiro-Wilk test to assess the normality of the numerical variables. None of the variables passed the normality test (all p-values < 0.05), indicating that the data does not follow a normal distribution. Therefore, Pearson correlation, which requires normality, cannot be applied in this case.
+
+```{r}
+col_names = c()
+sph_test = c()
+for (i in num_cols)
+{
+  col_names <- c(col_names, i)
+  ans <- shapiro.test(df[[i]])$p.value
+  sph_test <- c(sph_test, ans)
+}
+sph_df = data.frame(Name = col_names, PVal = sph_test)
+sph_df[order(sph_df$PVal),]
+```
+
+None of the variables meet the criteria for normal distribution, as all p-values are less than 0.05. Therefore, we can conclude that our numerical data does not follow a normal distribution, which means we cannot use Pearson correlation.
+
+2.	Correlation Analysis
+
+```{r}
+num_df <- subset(df,select = num_cols) #update the num_df after removing some of the observations
+
+# convert YES/NO factor columns to numeric (1 for YES, 0 for NO)
+num_df$Having_HealthIssue <- as.numeric(df$Having_HealthIssue == "YES")
+num_df$Time_Utilized <- as.numeric(df$Time_Utilized == "YES")
+num_df$Connected_with_Family_Friends_Relatives <- as.numeric(df$Connected_with_Family_Friends_Relatives == "YES")
+
+# convert WeightChange to numeric based on mappings
+num_df$WeightChange <- ifelse(df$WeightChange == "Increased", 2,
+                          ifelse(df$WeightChange == "Decreased", 0, 1))
+
+c <- cor(num_df)
+# View(c)
+corrplot(c, type="upper", method="number",
+         number.cex=0.7,  # font size of correlation numbers
+         tl.cex=0.7,      # font size of column/row names
+         tl.srt=60)
+```
+
++	Calculated the correlation matrix (cor) for numerical variables 
++	Visualized correlations using corrplot to analyze relationships between variables.
+
+
+```{r}
+# check correlation of having health issue category with quantitative data which is duration of different activities
+for (i in duration_cols)
+{
+  cat(i,": ",cor(num_df[[i]], num_df$Having_HealthIssue),"\n")
+}
+```
+
+There tends to be a mild correlation between the time spent on different activities and the likelihood of experiencing health issues. Longer durations spent on online classes, fitness activities, and watching TV show slight negative associations with health problems. Conversely, spending more time on social media shows a negligible positive correlation with health issues. These correlations, however, are generally weak, suggesting that individual activities may not strongly predict the likelihood of having health issues. It's likely that other factors not measured in this study also influence these relationships.
+
+```{r}
+# compute the total time for productive and non productive activity
+num_df$TotalP = num_df$SelfStudy_Duration + num_df$Fitness_Duration
+num_df$TotalN = num_df$SosMed_Duration + num_df$WatchingTV_Duration
+# View(num_df)
+
+# compute correlation
+correlations <- cor(num_df[, c("TotalP", "TotalN", "Time_Utilized")])
+print(correlations)
+
+ggplot(num_df, aes(x = TotalP, 
+                     y = Time_Utilized)) +
+  geom_point(color="green4") +
+  labs(title = "Correlation Between SelfStudy and Fitness Duration with Time_Utilized")+
+  geom_smooth(method="lm")
+
+```
+
+As the combined time spent on productive activities like self-study and fitness increases, there is a slight tendency for the overall time utilized to also increase.
+
+```{r}
+correlations <- cor(num_df[, c("NumberOfMeals", "WeightChange")])
+print(correlations)
+
+ggplot(num_df, aes(x = NumberOfMeals, 
+                     y = WeightChange)) +
+  geom_point(color="green4") +
+  labs(title = "Weight Change by Number Of Meals")+
+  geom_smooth(method="lm")
+```
+
+This suggests a weak positive relationship: as the number of meals consumed increases, there is a slight tendency for weight change to also increase.
+
+#### Categorical Variables
+
+1.	Chi-Square Test
+
+  + Chi-square tests were performed between all pairs of categorical variables to examine their association.
+  +	The p-value for each pair was calculated using the chisq.test function to assess the significance level of 0.05. A p-value less than 0.05 suggests rejection of the null hypothesis (indicating variables are independent).
+
+
+```{r}
+col_pair = c()
+chisq_pv = c()
+# harus dikasi ( ) klo ga nanti error
+for (i in 2:(length(cat_cols)-1))
+{
+  for (j in (i+1):length(cat_cols))
+  {
+    col_pair <- c(col_pair,paste(cat_cols[i],",", cat_cols[j]))
+    ans <- chisq.test(df[[cat_cols[i]]], df[[cat_cols[j]]])$p.value
+    chisq_pv <- c(chisq_pv, ans)
+    # print(chisq.test(df[[cat_cols[i]]], df[[cat_cols[j]]])$p.value)
+  }
+}
+
+chi_df = data.frame(Name = col_pair, PVal = chisq_pv)
+head(chi_df[order(chi_df$PVal),], n=10)
+```
+
+Some variables show a strong connection because we reject the null hypothesis (which states the variables are independent). In statistical terms, we reject the null hypothesis when the p-value is less than 0.05. This indicates that these two variables are not independent in the population from which this sample was taken.
+
+2.	Association Statistics
+  +	We calculated association statistics such as the Chi-square test statistic, Cramér's V, and contingency coefficients for specific pairs of variables.
+
+```{r}
+tbl1 <- table(df$OnlineClass_Rating, df$Time_Utilized) # creates a contingency table: a frequency table that displays the distribution of one categorical variable in rows and another in columns
+print(PercTable(tbl1))
+print(PercTable(tbl1, margin=1)) # sum of percentage per row
+print(PercTable(tbl1, margin=2)) # sum of percentage per column
+```
+
+Respondents who spent more time utilizing their time generally gave more positive ratings compared to those who spent less time.
+
+```{r}
+# computes a variety of association statistics for the contingency table, such as Chi-square test statistic, Cramér's V, and contingency coefficients, to determine the strength and significance of the association between the two categorical variables
+assocstats(tbl1)
+
+tbl1_plt = ggplot(df, aes(x = OnlineClass_Rating, fill = Time_Utilized)) + 
+  geom_bar(position = position_dodge(preserve = "single")) + # add a bar plot where bars of different categories are placed side by side, but bars with only one value will remain centered without dodging
+  labs(y = "Frequency (in tens)", 
+       title = "Online Class Rating by Time Utilized",
+       fill = "Time Utilized?") +
+  scale_y_continuous(labels = function(x) x / 10)
+print(tbl1_plt)
+```
+There are no strict rules for interpreting Cramer's V values, but as a guide: weak (0 to 0.2), moderate (0.2 to 0.3), strong (0.3 to 0.5), and redundant (0.5 to 0.99, indicating the variables likely measure the same concept).
+
+In this case, there is a moderate association between the online class rating and time utilized.
+
+```{r}
+tbl2 <- table(df$Connected_with_Family_Friends_Relatives, df$Time_Utilized)
+print(PercTable(tbl2))
+print(PercTable(tbl2, margin=1))
+print(PercTable(tbl2, margin=2))
+```
+
+```{r}
+assocstats(tbl2)
+
+tbl2_plt = ggplot(df, aes(x = Connected_with_Family_Friends_Relatives, fill = Time_Utilized)) + 
+  geom_bar(position = position_dodge(preserve = "single")) +
+  labs(y = "Frequency (in hundreds)", 
+       title = "Connected with Family Friends Relatives? by Time Utilized",
+       fill = "Time Utilized?") +
+  scale_y_continuous(labels = function(x) x / 100)
+print(tbl2_plt)
+```
+
+The findings show a connection between effective time management and stronger family bonds. Students who managed their time well reported closer relationships with their families. This is important as it highlights how good time management can enhance personal connections during challenging circumstances.
+
+## 6.	Discussion
+
+A few notable patterns and trends emerged from the investigation, providing valuable insights into the broader impacts of the pandemic.
+
+1. **Time Management Challenges**: During the pandemic, a significant number of respondents (51.44%) reported struggling with time management. This highlights the difficulty many face in effectively organizing their schedules for online learning.
+
+2. **Health Concerns**: Approximately 13.62% of students mentioned experiencing health issues, indicating the pandemic's considerable impact on their mental and physical well-being. This aligns with a global trend of prolonged lockdowns and lifestyle changes contributing to increased health worries.
+
+3. **Activity Preferences**: Students ranked exercise as their least favored activity when dividing their time among other activities. This preference for exercise could have adverse long-term effects on their overall health.
+
+4. **Family Connections**: Effective time management was positively associated with stronger family ties. This suggests that improving time management skills can help students maintain closer relationships with their families, providing crucial emotional support during difficult times.
+
+5. **Stress Management**: Listening to music and playing online video games emerged as popular methods for stress relief. These activities served as essential coping strategies to manage the stress and uncertainties brought by the pandemic.
+
+6. **No Direct Link Between Activity and Health**: The absence of a clear correlation between activity levels and health issues indicates that various factors like nutrition, mental health, and existing health conditions influence students' well-being.
+
+## 7. Conclusion
+
+The study reveals no direct link between students' health and the time they spend on activities such as self-study and online courses. It's concerning that more than half of the participants did not effectively manage their time during lockdowns, potentially impacting their health negatively. Addressing this issue involves supporting students in learning online and improving their time management skills. Additionally, the study highlights a lack of physical exercise among participants, which is critical for their overall well-being during these challenging times. Encouraging physical activity should be a priority to enhance their overall health.
+
+## 8.	References
+
+Kunal Chaturvedi, Dinesh Vishwakarma, Nidhi Singh. (2020). COVID-19 and its impact on education, social life and mental health of students: A Survey. Children and Youth Services Review, 121. [https://doi.org/10.1016/j.childyouth.2020.105866](https://doi.org/10.1016/j.childyouth.2020.105866)
+
+Kunal Chaturvedi. (2020). COVID-19 and its impact on students. Kaggle. Available at: [https://www.kaggle.com/datasets/kunal28chaturvedi/covid19-and-its-impact-on-students/data](https://www.kaggle.com/datasets/kunal28chaturvedi/covid19-and-its-impact-on-students/data)
